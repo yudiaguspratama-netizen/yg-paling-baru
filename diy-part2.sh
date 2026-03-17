@@ -1,20 +1,25 @@
 #!/bin/bash
-#
-# https://github.com/P3TERX/Actions-OpenWrt
-# File name: diy-part2.sh
-# Description: OpenWrt DIY script part 2 (After Update feeds)
-#
-# Copyright (c) 2019-2024 P3TERX <https://p3terx.com>
-#
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
-#
 
-# Modify default IP
-#sed -i 's/192.168.1.1/192.168.50.5/g' package/base-files/files/bin/config_generate
+# 1. Identitas Perangkat
+sed -i 's/ADSLR G7/ZTE E8820V2/g' package/base-files/files/bin/config_generate
 
-# Modify default theme
-#sed -i 's/luci-theme-bootstrap/luci-theme-argon/g' feeds/luci/collections/luci/Makefile
+# 2. Matikan IPv6 secara permanen
+sed -i 's/option disable_ipv6 0/option disable_ipv6 1/g' package/base-files/files/bin/config_generate
 
-# Modify hostname
-#sed -i 's/OpenWrt/P3TERX-Router/g' package/base-files/files/bin/config_generate
+# 3. Kunci ukuran Log ke 8KB agar tidak memakan RAM
+sed -i 's/log_size/log_size 8/g' package/base-files/files/bin/config_generate
+
+# 4. Matikan Service Logging dan Cron secara paksa saat startup
+# Ini membuat RAM tetap kosong dari proses background yang tidak perlu
+cat <<EOF > package/base-files/files/etc/rc.local
+# Hentikan semua proses logging
+/etc/init.d/log stop
+/etc/init.d/log disable
+/etc/init.d/cron stop
+/etc/init.d/cron disable
+
+# Trik Tambahan: Bebaskan cache RAM setiap boot
+sync && echo 3 > /proc/sys/vm/drop_caches
+
+exit 0
+EOF
